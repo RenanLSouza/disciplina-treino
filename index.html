@@ -2155,49 +2155,69 @@ var COMP_ACT = [
   L('box', 2, 3, 3)
 ];
 var COMP_ACT_L = { 4: COMP_ACT };
-/** Qual lista de força vale em cada dia e semana (null = sem treino de força). */
+/**
+ * Rotina real: tatame seg 7h30–8h30, qua 7h30–8h30, qui 18h30–19h30, sáb 8h30–9h30.
+ * Dias sem jiu: terça (Força A), sexta (Força B) e domingo (potência, curta). Dia 0 = segunda.
+ * Força A na terça: 24 h depois do jiu de segunda e antes do de quarta. Força B na sexta: pernas moderadas,
+ * pois o sábado tem jiu pela manhã. Se sentir as pernas pesadas no sábado, troque a ordem com o domingo.
+ */
+var COMP_MAT_TIME = [
+  '07h30 às 08h30',
+  null,
+  '07h30 às 08h30',
+  '18h30 às 19h30',
+  null,
+  '08h30 às 09h30',
+  null
+];
 function compLift(d, w) {
   var b = compBlockOf(w);
-  if (w === 12) return d === 0 ? COMP_ACT_L : null;
-  if (d === 0) return COMP_FA;
-  if (d === 2) return COMP_PW;
+  if (w === 12) return d === 1 ? COMP_ACT_L : null;
+  if (d === 1) return COMP_FA;
   if (d === 4 && b < 4) return COMP_FB;
+  if (d === 6) return COMP_PW;
   return null;
 }
 function compKind(d, w) {
-  if (w === 12) return ['lift', 'mat', 'rest', 'mat', 'rest', 'event', 'rest'][d];
-  if (w >= 10) return ['lift', 'mat', 'lift', 'mat', 'rest', 'mat', 'rest'][d];
-  return ['lift', 'mat', 'lift', 'mat', 'lift', 'mat', 'rest'][d];
+  if (w === 12) return ['mat', 'lift', 'mat', 'mat', 'rest', 'event', 'rest'][d];
+  if (w >= 10) return ['mat', 'lift', 'mat', 'mat', 'rest', 'mat', 'lift'][d];
+  return ['mat', 'lift', 'mat', 'mat', 'lift', 'mat', 'lift'][d];
 }
 function compTitle(d, w) {
+  var t = COMP_MAT_TIME[d];
+  if (t) {
+    var foco =
+      w === 12
+        ? 'técnica leve'
+        : w >= 10
+          ? ['técnica e drills', 'técnica e drills', 'sparring controlado', 'técnica e rolo leve'][
+              [0, 2, 3, 5].indexOf(d)
+            ]
+          : [
+              'técnica e drills',
+              'drills e passagem',
+              'específico de competição',
+              'sparring ou simulação'
+            ][[0, 2, 3, 5].indexOf(d)];
+    if (w === 12 && d === 5) return 'DIA DA COMPETIÇÃO';
+    return 'Tatame ' + t + ' · ' + foco;
+  }
   if (w === 12)
-    return [
-      'Ativação leve (10 a 15 min)',
-      'Tatame — técnica leve',
-      'Mobilidade e descanso',
-      'Tatame — técnica leve (até 30 min)',
-      'Descanso total — véspera',
-      'DIA DA COMPETIÇÃO',
-      'Recuperação'
-    ][d];
-  if (w >= 10)
-    return [
-      'Força A — manutenção',
-      'Tatame — técnica e drills',
-      'Potência curta',
-      'Tatame — sparring controlado',
-      'Recuperação ativa',
-      'Tatame — técnica e rolo leve',
-      'Descanso total'
-    ][d];
+    return d === 1
+      ? 'Ativação leve (10 a 15 min)'
+      : d === 4
+        ? 'Descanso total — véspera'
+        : d === 5
+          ? 'DIA DA COMPETIÇÃO'
+          : 'Recuperação';
   return [
+    '',
     'Força A — Terra, Supino e Remada',
-    'Tatame — Técnica e Sparring',
-    'Potência + Condicionamento',
-    'Tatame — Específico de competição',
-    'Força B — Pernas e Pegada',
-    'Tatame — Treino livre ou simulação',
-    'Descanso total'
+    '',
+    '',
+    w >= 10 ? 'Descanso — recuperação' : 'Força B — Pernas e Pegada',
+    '',
+    'Potência + Condicionamento' + (w >= 10 ? ' (curto)' : '')
   ][d];
 }
 
@@ -2269,7 +2289,6 @@ var COMP_EVENT_TIPS = [
   'Depois do evento, anote o que funcionou e o que faltou. Isso orienta o próximo ciclo.'
 ];
 
-var COMP_SCHED_WEEK = WEEK_SCHED;
 var COMP_SCHED_EVENT = [
   'Acordar com tempo, sem pressa',
   'Pesagem (confira o horário do evento)',
@@ -2279,9 +2298,73 @@ var COMP_SCHED_EVENT = [
   'Comer e beber entre as lutas',
   'Registrar as lutas e dormir cedo'
 ];
+var COMP_SCHED_MANHA = [
+  '05:45 Acordar, água, higiene',
+  '06:45 Pré-treino leve (banana + pão)',
+  '07:30-08:30 TREINO — tatame',
+  '09:00 Café da manhã (pós-treino, com whey)',
+  '09:30-11:30 Faculdade/estudo/loja ML',
+  '12:00 Almoço',
+  '14:00-17:00 Entregas',
+  '17:30 Café da tarde',
+  '19:00-22:30 Faculdade',
+  '22:30 Janta',
+  '23:15 Dormir'
+];
+var COMP_SCHED_QUI = [
+  '05:45 Acordar, água, higiene',
+  '07:30 Café da manhã',
+  '08:00-11:30 Faculdade/estudo/loja ML',
+  '11:30 Almoço',
+  '14:00-17:00 Entregas',
+  '15:30 Café da tarde',
+  '17:45 Pré-treino leve',
+  '18:30-19:30 TREINO — tatame',
+  '20:00 Janta (pós-treino, com carboidrato)',
+  '22:30 Ceia leve (opcional) e dormir'
+];
+var COMP_SCHED_SAB = [
+  '07:15 Pré-treino leve',
+  '08:30-09:30 TREINO — tatame',
+  '10:00 Café da manhã (pós-treino, com whey)',
+  '10:30-13:00 Entregas',
+  '13:00 Almoço',
+  '17:30 Café da tarde',
+  '21:30 Janta',
+  '22:00 Dormir'
+];
+var COMP_SCHED_FORCA = [
+  '05:15 Acordar, água, higiene',
+  '05:30 Pré-treino leve (30 a 60 min antes)',
+  '06:10-07:10 TREINO — musculação',
+  '07:30 Café da manhã (pós-treino, com whey)',
+  '08:00-11:30 Faculdade/estudo/loja ML',
+  '11:30 Almoço',
+  '14:00-17:00 Entregas',
+  '17:30 Café da tarde',
+  '19:00-22:30 Faculdade',
+  '22:30 Janta'
+];
+var COMP_SCHED_DOM = [
+  '08:30 Pré-treino leve',
+  '09:30-10:30 TREINO — potência e condicionamento',
+  '11:00 Café da manhã (pós-treino, com whey)',
+  '13:00 Almoço',
+  '16:30 Café da tarde',
+  '20:00 Janta',
+  '22:00 Ceia leve (opcional) e dormir'
+];
 function compSched(d, w) {
   if (w === 12 && d === 5) return COMP_SCHED_EVENT;
-  return JJ_SCHED[d];
+  return [
+    COMP_SCHED_MANHA,
+    COMP_SCHED_FORCA,
+    COMP_SCHED_MANHA,
+    COMP_SCHED_QUI,
+    COMP_SCHED_FORCA,
+    COMP_SCHED_SAB,
+    COMP_SCHED_DOM
+  ][d];
 }
 
 /** Referências de atletas avançados (revisão de Andreato et al., 2017), como múltiplos do peso corporal. */
@@ -2295,19 +2378,68 @@ var COMP_REFS = [
     <script>
 /* js/data/diet.js */
 /**
- * Dieta da planilha, por dia da semana (índice 0 = Segunda).
+ * Dieta por dia da semana (índice 0 = Segunda), alinhada à rotina de tatame:
+ * seg 7h30, qua 7h30, qui 18h30, sáb 8h30 (musculação na terça, sexta e domingo).
  * Cada item: n=nome, q=quantidade (texto), g=gramas, u=unidades, k=kcal, c=carbo, p=proteína, f=gordura,
- * grp=grupo de troca, fid=id do alimento original em FOODS.
- * opts = "trocas de refeição" da planilha (peixe já substituído por frango/carne).
+ * grp=grupo de troca, fid=id do alimento original em FOODS. opts = ideias de troca da refeição inteira.
+ * Sexta à noite é livre (saída com a noiva).
  */
 var DIET = [
   {
     dia: 'Segunda',
-    total: 3236,
+    total: 3135,
     meals: [
       {
-        n: '1ª Refeição',
-        t: '6h15',
+        n: 'Pré-treino',
+        t: '6h45',
+        items: [
+          {
+            n: 'Banana',
+            q: '180g',
+            g: 180,
+            u: null,
+            k: 98,
+            c: 25.1,
+            p: 1.2,
+            f: 0.4,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 154,
+            c: 30.2,
+            p: 5.1,
+            f: 1.9,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          {
+            n: 'Doce de leite',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 108,
+            c: 19.5,
+            p: 3,
+            f: 1.9,
+            grp: 'doce',
+            fid: 'doceLeite'
+          }
+        ],
+        opts: [
+          'Banana + torrada integral + mel',
+          'Pão francês + geleia + banana',
+          'Barra de cereal + banana + mel'
+        ],
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
+      },
+      {
+        n: 'Café da manhã (pós-treino)',
+        t: '9h',
         items: [
           {
             n: '2 bananas',
@@ -2395,6 +2527,18 @@ var DIET = [
           },
           { n: 'Mel', q: '15g', g: 15, u: null, k: 60, c: 15, p: 0, f: 0, grp: 'doce', fid: 'mel' },
           {
+            n: 'Whey protein',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 122,
+            c: 4,
+            p: 23,
+            f: 1.6,
+            grp: null,
+            fid: null
+          },
+          {
             n: 'Pasta de amendoim',
             q: '30g',
             g: 30,
@@ -2412,11 +2556,11 @@ var DIET = [
           'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
           'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
         ],
-        note: ''
+        note: 'Refeição pós-treino: carboidrato e proteína para recuperar. Já inclui whey.'
       },
       {
         n: 'Almoço',
-        t: '12h - pós musculação',
+        t: '12h',
         items: [
           {
             n: 'Arroz',
@@ -2464,55 +2608,7 @@ var DIET = [
       },
       {
         n: 'Café da tarde',
-        t: '15h',
-        items: [
-          {
-            n: 'Arroz',
-            q: '200g',
-            g: 200,
-            u: null,
-            k: 269,
-            c: 37.3,
-            p: 3.3,
-            f: 0.3,
-            grp: 'carb',
-            fid: 'arroz'
-          },
-          {
-            n: 'Frango cozido',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 159,
-            c: 0,
-            p: 34.5,
-            f: 6,
-            grp: 'prot',
-            fid: 'frango'
-          },
-          {
-            n: 'Legumes',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 33,
-            c: 6.3,
-            p: 1,
-            f: 1,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Batata doce 200g + frango grelhado 150g + legumes',
-          'Arroz integral 200g + patinho moído 150g + legumes',
-          'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
-        ],
-        note: ''
-      },
-      {
-        n: 'Lanche da tarde',
-        t: '18h',
+        t: '17h30',
         items: [
           {
             n: '2 bananas',
@@ -2573,18 +2669,6 @@ var DIET = [
             f: 18.7,
             grp: 'gord',
             fid: 'pasta'
-          },
-          {
-            n: 'Whey protein',
-            q: '30g',
-            g: 30,
-            u: null,
-            k: 122,
-            c: 4,
-            p: 23,
-            f: 1.6,
-            grp: null,
-            fid: null
           }
         ],
         opts: [
@@ -2596,7 +2680,7 @@ var DIET = [
       },
       {
         n: 'Janta',
-        t: '21h',
+        t: '22h30',
         items: [
           {
             n: 'Arroz',
@@ -2646,11 +2730,59 @@ var DIET = [
   },
   {
     dia: 'Terça',
-    total: 3236,
+    total: 3135,
     meals: [
       {
-        n: '1ª Refeição',
-        t: '8h - pós corrida',
+        n: 'Pré-treino',
+        t: '5h30',
+        items: [
+          {
+            n: 'Banana',
+            q: '180g',
+            g: 180,
+            u: null,
+            k: 98,
+            c: 25.1,
+            p: 1.2,
+            f: 0.4,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 154,
+            c: 30.2,
+            p: 5.1,
+            f: 1.9,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          {
+            n: 'Doce de leite',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 108,
+            c: 19.5,
+            p: 3,
+            f: 1.9,
+            grp: 'doce',
+            fid: 'doceLeite'
+          }
+        ],
+        opts: [
+          'Banana + torrada integral + mel',
+          'Pão francês + geleia + banana',
+          'Barra de cereal + banana + mel'
+        ],
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
+      },
+      {
+        n: 'Café da manhã (pós-treino)',
+        t: '7h30',
         items: [
           {
             n: '2 bananas',
@@ -2767,11 +2899,11 @@ var DIET = [
           'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
           'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
         ],
-        note: ''
+        note: 'Refeição pós-treino: carboidrato e proteína para recuperar. Já inclui whey.'
       },
       {
         n: 'Almoço',
-        t: '12h - pós musculação',
+        t: '11h30',
         items: [
           {
             n: 'Arroz',
@@ -2819,55 +2951,7 @@ var DIET = [
       },
       {
         n: 'Café da tarde',
-        t: '15h',
-        items: [
-          {
-            n: 'Arroz',
-            q: '200g',
-            g: 200,
-            u: null,
-            k: 269,
-            c: 37.3,
-            p: 3.3,
-            f: 0.3,
-            grp: 'carb',
-            fid: 'arroz'
-          },
-          {
-            n: 'Frango cozido',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 159,
-            c: 0,
-            p: 34.5,
-            f: 6,
-            grp: 'prot',
-            fid: 'frango'
-          },
-          {
-            n: 'Legumes',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 33,
-            c: 6.3,
-            p: 1,
-            f: 1,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Batata doce 200g + frango grelhado 150g + legumes',
-          'Arroz integral 200g + patinho moído 150g + legumes',
-          'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
-        ],
-        note: ''
-      },
-      {
-        n: 'Lanche da tarde',
-        t: '18h',
+        t: '17h30',
         items: [
           {
             n: '2 bananas',
@@ -2939,7 +3023,7 @@ var DIET = [
       },
       {
         n: 'Janta',
-        t: '21h',
+        t: '22h30',
         items: [
           {
             n: 'Arroz',
@@ -2989,11 +3073,59 @@ var DIET = [
   },
   {
     dia: 'Quarta',
-    total: 3236,
+    total: 3135,
     meals: [
       {
-        n: '1ª Refeição',
-        t: '8h - pós corrida',
+        n: 'Pré-treino',
+        t: '6h45',
+        items: [
+          {
+            n: 'Banana',
+            q: '180g',
+            g: 180,
+            u: null,
+            k: 98,
+            c: 25.1,
+            p: 1.2,
+            f: 0.4,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 154,
+            c: 30.2,
+            p: 5.1,
+            f: 1.9,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          {
+            n: 'Doce de leite',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 108,
+            c: 19.5,
+            p: 3,
+            f: 1.9,
+            grp: 'doce',
+            fid: 'doceLeite'
+          }
+        ],
+        opts: [
+          'Banana + torrada integral + mel',
+          'Pão francês + geleia + banana',
+          'Barra de cereal + banana + mel'
+        ],
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
+      },
+      {
+        n: 'Café da manhã (pós-treino)',
+        t: '9h',
         items: [
           {
             n: '2 bananas',
@@ -3110,7 +3242,7 @@ var DIET = [
           'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
           'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
         ],
-        note: ''
+        note: 'Refeição pós-treino: carboidrato e proteína para recuperar. Já inclui whey.'
       },
       {
         n: 'Almoço',
@@ -3162,55 +3294,7 @@ var DIET = [
       },
       {
         n: 'Café da tarde',
-        t: '15h',
-        items: [
-          {
-            n: 'Arroz',
-            q: '200g',
-            g: 200,
-            u: null,
-            k: 269,
-            c: 37.3,
-            p: 3.3,
-            f: 0.3,
-            grp: 'carb',
-            fid: 'arroz'
-          },
-          {
-            n: 'Frango cozido',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 159,
-            c: 0,
-            p: 34.5,
-            f: 6,
-            grp: 'prot',
-            fid: 'frango'
-          },
-          {
-            n: 'Legumes',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 33,
-            c: 6.3,
-            p: 1,
-            f: 1,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Batata doce 200g + frango grelhado 150g + legumes',
-          'Arroz integral 200g + patinho moído 150g + legumes',
-          'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
-        ],
-        note: ''
-      },
-      {
-        n: 'Lanche da tarde',
-        t: '18h',
+        t: '17h30',
         items: [
           {
             n: '2 bananas',
@@ -3282,7 +3366,7 @@ var DIET = [
       },
       {
         n: 'Janta',
-        t: '21h',
+        t: '22h30',
         items: [
           {
             n: 'Arroz',
@@ -3332,11 +3416,11 @@ var DIET = [
   },
   {
     dia: 'Quinta',
-    total: 4357,
+    total: 3554,
     meals: [
       {
-        n: '1ª Refeição',
-        t: '6h',
+        n: 'Café da manhã',
+        t: '7h30',
         items: [
           {
             n: '2 bananas',
@@ -3424,6 +3508,18 @@ var DIET = [
           },
           { n: 'Mel', q: '15g', g: 15, u: null, k: 60, c: 15, p: 0, f: 0, grp: 'doce', fid: 'mel' },
           {
+            n: 'Whey protein',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 122,
+            c: 4,
+            p: 23,
+            f: 1.6,
+            grp: null,
+            fid: null
+          },
+          {
             n: 'Pasta de amendoim',
             q: '30g',
             g: 30,
@@ -3444,164 +3540,56 @@ var DIET = [
         note: ''
       },
       {
-        n: 'Pós treino',
-        t: '10h',
-        items: [
-          {
-            n: 'Banana',
-            q: '180g',
-            g: 180,
-            u: null,
-            k: 166,
-            c: 42.8,
-            p: 0,
-            f: 0.2,
-            grp: 'fruta',
-            fid: 'banana'
-          },
-          {
-            n: 'Pão francês',
-            q: '50g',
-            g: 50,
-            u: null,
-            k: 137,
-            c: 29.3,
-            p: 5.2,
-            f: 1.5,
-            grp: 'pao',
-            fid: 'paoFrances'
-          },
-          {
-            n: 'Iogurte integral natural',
-            q: '140g',
-            g: 140,
-            u: null,
-            k: 83,
-            c: 8.2,
-            p: 5.4,
-            f: 3.1,
-            grp: 'lac',
-            fid: 'iogurte'
-          },
-          {
-            n: 'Whey protein',
-            q: '30g',
-            g: 30,
-            u: null,
-            k: 122,
-            c: 4,
-            p: 23,
-            f: 1.6,
-            grp: null,
-            fid: null
-          }
-        ],
-        opts: [
-          'Banana + 2 fatias pão de forma + cottage + whey',
-          'Mingau de aveia 40g + leite + mel + whey',
-          'Vitamina de banana + leite + aveia + whey'
-        ],
-        note: ''
-      },
-      {
         n: 'Almoço',
-        t: '12h - pós musculação',
+        t: '11h30',
         items: [
           {
-            n: 'Macarrão',
-            q: '300g',
-            g: 300,
+            n: 'Arroz',
+            q: '200g',
+            g: 200,
             u: null,
-            k: 474,
-            c: 92.6,
-            p: 17.4,
-            f: 2.8,
+            k: 269,
+            c: 37.3,
+            p: 3.3,
+            f: 0.3,
             grp: 'carb',
-            fid: 'macarrao'
+            fid: 'arroz'
           },
           {
-            n: 'Patinho moído',
+            n: 'Frango cozido',
             q: '150g',
             g: 150,
             u: null,
-            k: 210,
+            k: 159,
             c: 0,
-            p: 45,
-            f: 3.8,
+            p: 34.5,
+            f: 6,
             grp: 'prot',
-            fid: 'patinho'
+            fid: 'frango'
           },
           {
-            n: 'Legumes (tomate)',
+            n: 'Legumes',
             q: '75g',
             g: 75,
             u: null,
-            k: 22,
-            c: 4.8,
-            p: 1.1,
-            f: 0.2,
+            k: 33,
+            c: 6.3,
+            p: 1,
+            f: 1,
             grp: 'veg',
             fid: 'legumes'
           }
         ],
         opts: [
-          'Arroz 300g + frango desfiado 150g + tomate',
-          'Batata 300g + carne moída 150g + legumes',
-          'Macarrão integral 300g + frango moído 150g + molho de tomate'
+          'Batata doce 200g + frango grelhado 150g + legumes',
+          'Arroz integral 200g + patinho moído 150g + legumes',
+          'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
         ],
         note: ''
       },
       {
         n: 'Café da tarde',
-        t: '15h',
-        items: [
-          {
-            n: 'Macarrão',
-            q: '300g',
-            g: 300,
-            u: null,
-            k: 474,
-            c: 92.6,
-            p: 17.4,
-            f: 2.8,
-            grp: 'carb',
-            fid: 'macarrao'
-          },
-          {
-            n: 'Patinho moído',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 210,
-            c: 0,
-            p: 45,
-            f: 3.8,
-            grp: 'prot',
-            fid: 'patinho'
-          },
-          {
-            n: 'Legumes (tomate)',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 22,
-            c: 4.8,
-            p: 1.1,
-            f: 0.2,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Arroz 300g + frango desfiado 150g + tomate',
-          'Batata 300g + carne moída 150g + legumes',
-          'Macarrão integral 300g + frango moído 150g + molho de tomate'
-        ],
-        note: ''
-      },
-      {
-        n: 'Lanche da tarde',
-        t: '18h',
+        t: '15h30',
         items: [
           {
             n: '2 bananas',
@@ -3672,62 +3660,8 @@ var DIET = [
         note: ''
       },
       {
-        n: 'Janta',
-        t: '21h',
-        items: [
-          {
-            n: 'Macarrão',
-            q: '300g',
-            g: 300,
-            u: null,
-            k: 474,
-            c: 92.6,
-            p: 17.4,
-            f: 2.8,
-            grp: 'carb',
-            fid: 'macarrao'
-          },
-          {
-            n: 'Patinho moído',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 210,
-            c: 0,
-            p: 45,
-            f: 3.8,
-            grp: 'prot',
-            fid: 'patinho'
-          },
-          {
-            n: 'Legumes (tomate)',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 22,
-            c: 4.8,
-            p: 1.1,
-            f: 0.2,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Arroz 300g + frango desfiado 150g + tomate',
-          'Batata 300g + carne moída 150g + legumes',
-          'Macarrão integral 300g + frango moído 150g + molho de tomate'
-        ],
-        note: ''
-      }
-    ]
-  },
-  {
-    dia: 'Sexta',
-    total: 3612,
-    meals: [
-      {
-        n: 'Pré longão',
-        t: '6h',
+        n: 'Pré-treino',
+        t: '17h45',
         items: [
           {
             n: 'Banana',
@@ -3771,35 +3705,148 @@ var DIET = [
           'Pão francês + geleia + banana',
           'Barra de cereal + banana + mel'
         ],
-        note: ''
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
       },
       {
-        n: 'Intra-treino',
-        t: '7h',
+        n: 'Janta (pós-treino)',
+        t: '20h',
         items: [
           {
-            n: 'Gel de carboidratos',
-            q: '2 unid',
-            g: null,
+            n: 'Macarrão',
+            q: '300g',
+            g: 300,
             u: null,
-            k: 144,
-            c: 36,
-            p: 0,
-            f: 0,
-            grp: null,
-            fid: null
+            k: 474,
+            c: 92.6,
+            p: 17.4,
+            f: 2.8,
+            grp: 'carb',
+            fid: 'macarrao'
+          },
+          {
+            n: 'Patinho moído',
+            q: '150g',
+            g: 150,
+            u: null,
+            k: 210,
+            c: 0,
+            p: 45,
+            f: 3.8,
+            grp: 'prot',
+            fid: 'patinho'
+          },
+          {
+            n: 'Legumes (tomate)',
+            q: '75g',
+            g: 75,
+            u: null,
+            k: 22,
+            c: 4.8,
+            p: 1.1,
+            f: 0.2,
+            grp: 'veg',
+            fid: 'legumes'
           }
         ],
         opts: [
-          'Banana madura + mel',
-          'Isotônico caseiro (água+sal+mel)',
-          'Uva passa/tâmaras (30g)'
+          'Arroz 300g + frango desfiado 150g + tomate',
+          'Batata 300g + carne moída 150g + legumes',
+          'Macarrão integral 300g + frango moído 150g + molho de tomate'
         ],
-        note: ''
+        note: 'Janta pós-treino com mais carboidrato (macarrão) para recuperar do jiu da noite.'
       },
       {
-        n: '1ª Refeição',
-        t: '10h - pós longão',
+        n: 'Ceia (opcional)',
+        t: '22h30',
+        items: [
+          {
+            n: 'Iogurte integral natural',
+            q: '140g',
+            g: 140,
+            u: null,
+            k: 83,
+            c: 8.2,
+            p: 5.4,
+            f: 3.1,
+            grp: 'lac',
+            fid: 'iogurte'
+          },
+          {
+            n: 'Pasta de amendoim',
+            q: '15g',
+            g: 15,
+            u: null,
+            k: 91,
+            c: 3,
+            p: 4.1,
+            f: 7,
+            grp: 'gord',
+            fid: 'pasta'
+          }
+        ],
+        opts: [
+          'Leite desnatado morno (200ml) + 1 banana',
+          'Queijo cottage (100g) + 1 fatia de pão integral'
+        ],
+        note: 'Só se estiver com fome. Pode pular sem culpa.'
+      }
+    ]
+  },
+  {
+    dia: 'Sexta',
+    total: 3674,
+    meals: [
+      {
+        n: 'Pré-treino',
+        t: '5h30',
+        items: [
+          {
+            n: 'Banana',
+            q: '180g',
+            g: 180,
+            u: null,
+            k: 98,
+            c: 25.1,
+            p: 1.2,
+            f: 0.4,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 154,
+            c: 30.2,
+            p: 5.1,
+            f: 1.9,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          {
+            n: 'Doce de leite',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 108,
+            c: 19.5,
+            p: 3,
+            f: 1.9,
+            grp: 'doce',
+            fid: 'doceLeite'
+          }
+        ],
+        opts: [
+          'Banana + torrada integral + mel',
+          'Pão francês + geleia + banana',
+          'Barra de cereal + banana + mel'
+        ],
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
+      },
+      {
+        n: 'Café da manhã (pós-treino)',
+        t: '7h30',
         items: [
           {
             n: '2 bananas',
@@ -3874,9 +3921,9 @@ var DIET = [
             fid: 'aveia'
           },
           {
-            n: '3 fatias de pão',
-            q: '75g',
-            g: 75,
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
             u: null,
             k: 145,
             c: 31,
@@ -3885,41 +3932,42 @@ var DIET = [
             grp: 'pao',
             fid: 'paoForma'
           },
+          { n: 'Mel', q: '15g', g: 15, u: null, k: 60, c: 15, p: 0, f: 0, grp: 'doce', fid: 'mel' },
           {
-            n: 'Ovo',
-            q: '3un',
-            g: 150,
-            u: 3,
+            n: 'Whey protein',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 122,
+            c: 4,
+            p: 23,
+            f: 1.6,
+            grp: null,
+            fid: null
+          },
+          {
+            n: 'Pasta de amendoim',
+            q: '30g',
+            g: 30,
+            u: null,
             k: 182,
             c: 6,
             p: 8.2,
             f: 14,
-            grp: 'prot',
-            fid: 'ovo'
-          },
-          {
-            n: 'Requeijão light',
-            q: '30g',
-            g: 30,
-            u: null,
-            k: 54,
-            c: 1.1,
-            p: 4,
-            f: 3.3,
-            grp: 'lac',
-            fid: 'requeijao'
+            grp: 'gord',
+            fid: 'pasta'
           }
         ],
         opts: [
-          'Omelete (4 ovos) + pão integral + queijo + fruta',
-          'Tapioca + frango desfiado + queijo + suco natural',
-          'Panqueca de aveia + whey + mel + fruta'
+          '3 ovos mexidos + 2 fatias de pão integral + queijo prato + 1 banana',
+          'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
+          'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
         ],
-        note: ''
+        note: 'Refeição pós-treino: carboidrato e proteína para recuperar. Já inclui whey.'
       },
       {
         n: 'Almoço',
-        t: '12h - pós musculação',
+        t: '11h30',
         items: [
           {
             n: 'Arroz',
@@ -3967,7 +4015,274 @@ var DIET = [
       },
       {
         n: 'Café da tarde',
-        t: '15h',
+        t: '17h30',
+        items: [
+          {
+            n: '2 bananas',
+            q: '150g',
+            g: 150,
+            u: null,
+            k: 147,
+            c: 39,
+            p: 1.9,
+            f: 0.2,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: 'Aveia',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 107,
+            c: 16,
+            p: 5,
+            f: 2.4,
+            grp: 'cer',
+            fid: 'aveia'
+          },
+          {
+            n: '3 ovos',
+            q: '3un',
+            g: 150,
+            u: 3,
+            k: 240,
+            c: 3,
+            p: 18,
+            f: 18,
+            grp: 'prot',
+            fid: 'ovo'
+          },
+          {
+            n: 'Canela em pó',
+            q: '3g',
+            g: 3,
+            u: null,
+            k: 5,
+            c: 1.6,
+            p: 0.1,
+            f: 0.1,
+            grp: null,
+            fid: null
+          },
+          {
+            n: 'Pasta de amendoim',
+            q: '40g',
+            g: 40,
+            u: null,
+            k: 243,
+            c: 8,
+            p: 11,
+            f: 18.7,
+            grp: 'gord',
+            fid: 'pasta'
+          }
+        ],
+        opts: [
+          'Omelete (3 ovos) + batata doce 150g + 1 fruta',
+          'Iogurte integral 200g + granola + mel + pasta de amendoim',
+          'Pão integral + frango desfiado + queijo + fruta'
+        ],
+        note: ''
+      },
+      {
+        n: 'Jantar livre',
+        t: 'noite',
+        items: [
+          {
+            n: 'Saída com a noiva — aproveite',
+            q: '-',
+            g: null,
+            u: null,
+            k: 1000,
+            c: 100,
+            p: 50,
+            f: 40,
+            grp: null,
+            fid: null
+          }
+        ],
+        opts: [],
+        note: 'Refeição flexível da semana. Manhã e tarde seguem o plano. Escolha uma proteína, não exagere na bebida e curta a noite.'
+      }
+    ]
+  },
+  {
+    dia: 'Sábado',
+    total: 3135,
+    meals: [
+      {
+        n: 'Pré-treino',
+        t: '7h15',
+        items: [
+          {
+            n: 'Banana',
+            q: '180g',
+            g: 180,
+            u: null,
+            k: 98,
+            c: 25.1,
+            p: 1.2,
+            f: 0.4,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 154,
+            c: 30.2,
+            p: 5.1,
+            f: 1.9,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          {
+            n: 'Doce de leite',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 108,
+            c: 19.5,
+            p: 3,
+            f: 1.9,
+            grp: 'doce',
+            fid: 'doceLeite'
+          }
+        ],
+        opts: [
+          'Banana + torrada integral + mel',
+          'Pão francês + geleia + banana',
+          'Barra de cereal + banana + mel'
+        ],
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
+      },
+      {
+        n: 'Café da manhã (pós-treino)',
+        t: '10h',
+        items: [
+          {
+            n: '2 bananas',
+            q: '150g',
+            g: 150,
+            u: null,
+            k: 147,
+            c: 39,
+            p: 1.9,
+            f: 0.2,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '1 maçã',
+            q: '150g',
+            g: 150,
+            u: null,
+            k: 78,
+            c: 20.7,
+            p: 0.4,
+            f: 0.3,
+            grp: 'fruta',
+            fid: 'maca'
+          },
+          {
+            n: 'Mamão formosa',
+            q: '150g',
+            g: 150,
+            u: null,
+            k: 70,
+            c: 18.2,
+            p: 1.1,
+            f: 0,
+            grp: 'fruta',
+            fid: 'mamao'
+          },
+          {
+            n: 'Canela em pó',
+            q: '3g',
+            g: 3,
+            u: null,
+            k: 5,
+            c: 1.6,
+            p: 0.1,
+            f: 0.1,
+            grp: null,
+            fid: null
+          },
+          {
+            n: 'Leite desnatado',
+            q: '300ml',
+            g: 300,
+            u: null,
+            k: 124,
+            c: 13.5,
+            p: 9,
+            f: 3,
+            grp: 'lac',
+            fid: 'leiteDesn'
+          },
+          {
+            n: 'Aveia',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 178,
+            c: 26.7,
+            p: 8.3,
+            f: 4,
+            grp: 'cer',
+            fid: 'aveia'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 145,
+            c: 31,
+            p: 3,
+            f: 1.1,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          { n: 'Mel', q: '15g', g: 15, u: null, k: 60, c: 15, p: 0, f: 0, grp: 'doce', fid: 'mel' },
+          {
+            n: 'Whey protein',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 122,
+            c: 4,
+            p: 23,
+            f: 1.6,
+            grp: null,
+            fid: null
+          },
+          {
+            n: 'Pasta de amendoim',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 182,
+            c: 6,
+            p: 8.2,
+            f: 14,
+            grp: 'gord',
+            fid: 'pasta'
+          }
+        ],
+        opts: [
+          '3 ovos mexidos + 2 fatias de pão integral + queijo prato + 1 banana',
+          'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
+          'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
+        ],
+        note: 'Refeição pós-treino: carboidrato e proteína para recuperar. Já inclui whey.'
+      },
+      {
+        n: 'Almoço',
+        t: '13h',
         items: [
           {
             n: 'Arroz',
@@ -4014,8 +4329,8 @@ var DIET = [
         note: ''
       },
       {
-        n: 'Lanche da tarde',
-        t: '18h',
+        n: 'Café da tarde',
+        t: '17h30',
         items: [
           {
             n: '2 bananas',
@@ -4087,7 +4402,7 @@ var DIET = [
       },
       {
         n: 'Janta',
-        t: '21h',
+        t: '21h30',
         items: [
           {
             n: 'Arroz',
@@ -4132,331 +4447,64 @@ var DIET = [
           'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
         ],
         note: ''
-      }
-    ]
-  },
-  {
-    dia: 'Sábado',
-    total: 3708,
-    meals: [
-      {
-        n: '1ª Refeição',
-        t: '6h',
-        items: [
-          {
-            n: '2 bananas',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 147,
-            c: 39,
-            p: 1.9,
-            f: 0.2,
-            grp: 'fruta',
-            fid: 'banana'
-          },
-          {
-            n: '1 maçã',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 78,
-            c: 20.7,
-            p: 0.4,
-            f: 0.3,
-            grp: 'fruta',
-            fid: 'maca'
-          },
-          {
-            n: 'Mamão formosa',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 70,
-            c: 18.2,
-            p: 1.1,
-            f: 0,
-            grp: 'fruta',
-            fid: 'mamao'
-          },
-          {
-            n: 'Canela em pó',
-            q: '3g',
-            g: 3,
-            u: null,
-            k: 5,
-            c: 1.6,
-            p: 0.1,
-            f: 0.1,
-            grp: null,
-            fid: null
-          },
-          {
-            n: 'Leite desnatado',
-            q: '300ml',
-            g: 300,
-            u: null,
-            k: 124,
-            c: 13.5,
-            p: 9,
-            f: 3,
-            grp: 'lac',
-            fid: 'leiteDesn'
-          },
-          {
-            n: 'Aveia',
-            q: '50g',
-            g: 50,
-            u: null,
-            k: 178,
-            c: 26.7,
-            p: 8.3,
-            f: 4,
-            grp: 'cer',
-            fid: 'aveia'
-          },
-          {
-            n: '2 fatias de pão',
-            q: '50g',
-            g: 50,
-            u: null,
-            k: 145,
-            c: 31,
-            p: 3,
-            f: 1.1,
-            grp: 'pao',
-            fid: 'paoForma'
-          },
-          { n: 'Mel', q: '15g', g: 15, u: null, k: 60, c: 15, p: 0, f: 0, grp: 'doce', fid: 'mel' },
-          {
-            n: 'Whey protein',
-            q: '30g',
-            g: 30,
-            u: null,
-            k: 122,
-            c: 4,
-            p: 23,
-            f: 1.6,
-            grp: null,
-            fid: null
-          },
-          {
-            n: 'Pasta de amendoim',
-            q: '30g',
-            g: 30,
-            u: null,
-            k: 182,
-            c: 6,
-            p: 8.2,
-            f: 14,
-            grp: 'gord',
-            fid: 'pasta'
-          }
-        ],
-        opts: [
-          '3 ovos mexidos + 2 fatias de pão integral + queijo prato + 1 banana',
-          'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
-          'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
-        ],
-        note: ''
-      },
-      {
-        n: 'Almoço',
-        t: '12h',
-        items: [
-          {
-            n: 'Arroz',
-            q: '200g',
-            g: 200,
-            u: null,
-            k: 269,
-            c: 37.3,
-            p: 3.3,
-            f: 0.3,
-            grp: 'carb',
-            fid: 'arroz'
-          },
-          {
-            n: 'Frango cozido',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 159,
-            c: 0,
-            p: 34.5,
-            f: 6,
-            grp: 'prot',
-            fid: 'frango'
-          },
-          {
-            n: 'Legumes',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 33,
-            c: 6.3,
-            p: 1,
-            f: 1,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Batata doce 200g + frango grelhado 150g + legumes',
-          'Arroz integral 200g + patinho moído 150g + legumes',
-          'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
-        ],
-        note: ''
-      },
-      {
-        n: 'Almoço',
-        t: '15h',
-        items: [
-          {
-            n: 'Arroz',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 202,
-            c: 28,
-            p: 2.5,
-            f: 0.2,
-            grp: 'carb',
-            fid: 'arroz'
-          },
-          {
-            n: 'Frango cozido',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 159,
-            c: 0,
-            p: 34.5,
-            f: 6,
-            grp: 'prot',
-            fid: 'frango'
-          },
-          {
-            n: 'Legumes',
-            q: '75g',
-            g: 75,
-            u: null,
-            k: 33,
-            c: 6.3,
-            p: 1,
-            f: 1,
-            grp: 'veg',
-            fid: 'legumes'
-          }
-        ],
-        opts: [
-          'Batata doce 200g + frango grelhado 150g + legumes',
-          'Arroz integral 200g + patinho moído 150g + legumes',
-          'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
-        ],
-        note: ''
-      },
-      {
-        n: 'Lanche da tarde',
-        t: '18h',
-        items: [
-          {
-            n: '2 bananas',
-            q: '150g',
-            g: 150,
-            u: null,
-            k: 147,
-            c: 39,
-            p: 1.9,
-            f: 0.2,
-            grp: 'fruta',
-            fid: 'banana'
-          },
-          {
-            n: 'Aveia',
-            q: '30g',
-            g: 30,
-            u: null,
-            k: 107,
-            c: 16,
-            p: 5,
-            f: 2.4,
-            grp: 'cer',
-            fid: 'aveia'
-          },
-          {
-            n: '3 ovos',
-            q: '3un',
-            g: 150,
-            u: 3,
-            k: 240,
-            c: 3,
-            p: 18,
-            f: 18,
-            grp: 'prot',
-            fid: 'ovo'
-          },
-          {
-            n: 'Canela em pó',
-            q: '3g',
-            g: 3,
-            u: null,
-            k: 5,
-            c: 1.6,
-            p: 0.1,
-            f: 0.1,
-            grp: null,
-            fid: null
-          },
-          {
-            n: 'Pasta de amendoim',
-            q: '40g',
-            g: 40,
-            u: null,
-            k: 243,
-            c: 8,
-            p: 11,
-            f: 18.7,
-            grp: 'gord',
-            fid: 'pasta'
-          }
-        ],
-        opts: [
-          'Omelete (3 ovos) + batata doce 150g + 1 fruta',
-          'Iogurte integral 200g + granola + mel + pasta de amendoim',
-          'Pão integral + frango desfiado + queijo + fruta'
-        ],
-        note: ''
-      },
-      {
-        n: 'Refeição livre',
-        t: null,
-        items: [
-          {
-            n: 'Parabéns! Você merece',
-            q: '-',
-            g: null,
-            u: null,
-            k: 1000,
-            c: 100,
-            p: 50,
-            f: 40,
-            grp: null,
-            fid: null
-          }
-        ],
-        opts: [],
-        note: 'Já é a refeição flexível da semana — aproveite com moderação.'
       }
     ]
   },
   {
     dia: 'Domingo',
-    total: 3775,
+    total: 3309,
     meals: [
       {
-        n: '1ª Refeição',
-        t: '8h - pós corrida',
+        n: 'Pré-treino',
+        t: '8h30',
+        items: [
+          {
+            n: 'Banana',
+            q: '180g',
+            g: 180,
+            u: null,
+            k: 98,
+            c: 25.1,
+            p: 1.2,
+            f: 0.4,
+            grp: 'fruta',
+            fid: 'banana'
+          },
+          {
+            n: '2 fatias de pão',
+            q: '50g',
+            g: 50,
+            u: null,
+            k: 154,
+            c: 30.2,
+            p: 5.1,
+            f: 1.9,
+            grp: 'pao',
+            fid: 'paoForma'
+          },
+          {
+            n: 'Doce de leite',
+            q: '30g',
+            g: 30,
+            u: null,
+            k: 108,
+            c: 19.5,
+            p: 3,
+            f: 1.9,
+            grp: 'doce',
+            fid: 'doceLeite'
+          }
+        ],
+        opts: [
+          'Banana + torrada integral + mel',
+          'Pão francês + geleia + banana',
+          'Barra de cereal + banana + mel'
+        ],
+        note: 'Carboidrato de fácil digestão, sem fibra em excesso nem gordura. Se treinar de estômago muito cheio, reduza a quantidade.'
+      },
+      {
+        n: 'Café da manhã (pós-treino)',
+        t: '11h',
         items: [
           {
             n: '2 bananas',
@@ -4573,31 +4621,11 @@ var DIET = [
           'Tapioca (60g) + 2 ovos + queijo coalho + suco natural',
           'Panqueca de aveia (2 ovos+40g aveia) + queijo cottage + mel + fruta'
         ],
-        note: ''
-      },
-      {
-        n: 'Refeição livre',
-        t: null,
-        items: [
-          {
-            n: 'Parabéns! Você merece',
-            q: '-',
-            g: null,
-            u: null,
-            k: 1000,
-            c: 100,
-            p: 50,
-            f: 40,
-            grp: null,
-            fid: null
-          }
-        ],
-        opts: [],
-        note: 'Já é a refeição flexível da semana — aproveite com moderação.'
+        note: 'Refeição pós-treino: carboidrato e proteína para recuperar. Já inclui whey.'
       },
       {
         n: 'Almoço',
-        t: '15h',
+        t: '13h',
         items: [
           {
             n: 'Arroz',
@@ -4644,8 +4672,8 @@ var DIET = [
         note: ''
       },
       {
-        n: 'Lanche da tarde',
-        t: '18h',
+        n: 'Café da tarde',
+        t: '16h30',
         items: [
           {
             n: '2 bananas',
@@ -4716,8 +4744,8 @@ var DIET = [
         note: ''
       },
       {
-        n: 'Almoço',
-        t: '18h30',
+        n: 'Janta',
+        t: '20h',
         items: [
           {
             n: 'Arroz',
@@ -4762,16 +4790,46 @@ var DIET = [
           'Macarrão/cuscuz 200g + carne moída (patinho) 150g + legumes'
         ],
         note: ''
+      },
+      {
+        n: 'Ceia (opcional)',
+        t: '22h',
+        items: [
+          {
+            n: 'Iogurte integral natural',
+            q: '140g',
+            g: 140,
+            u: null,
+            k: 83,
+            c: 8.2,
+            p: 5.4,
+            f: 3.1,
+            grp: 'lac',
+            fid: 'iogurte'
+          },
+          {
+            n: 'Pasta de amendoim',
+            q: '15g',
+            g: 15,
+            u: null,
+            k: 91,
+            c: 3,
+            p: 4.1,
+            f: 7,
+            grp: 'gord',
+            fid: 'pasta'
+          }
+        ],
+        opts: [
+          'Leite desnatado morno (200ml) + 1 banana',
+          'Queijo cottage (100g) + 1 fatia de pão integral'
+        ],
+        note: 'Só se estiver com fome. Pode pular sem culpa.'
       }
     ]
   }
 ];
 
-/**
- * Banco de alimentos usado nas trocas. m = [kcal, carbo, proteína, gordura] por 100 g (ou 100 ml).
- * g = grupo (só troca dentro do mesmo grupo). u = gramas por unidade. ml = líquido.
- * Valores aproximados (tabela TACO).
- */
 var FOODS = {
   frango: { n: 'Frango cozido (peito)', g: 'prot', m: [106, 0, 23, 4] },
   frangoGrel: { n: 'Peito de frango grelhado', g: 'prot', m: [159, 0, 32, 2.5] },
@@ -4996,7 +5054,7 @@ var S = {
   meals: {},
   suppOn: {},
   suppTaken: {},
-  program: 'hibrido',
+  program: 'comp',
   start: '',
   comp: '',
   sel: { week: 1, day: 0, tab: 'treino', dsub: 'ref' }
@@ -5017,6 +5075,7 @@ function save() {
     try {
       localStorage.setItem(KEY, JSON.stringify(S));
     } catch (e) {}
+    if (typeof cloudDirty === 'function') cloudDirty();
   }, 250);
 }
 function setPath(path, val) {
@@ -5075,6 +5134,268 @@ function toggle(path, label, wide) {
     '><span>' +
     label +
     '</span></label>'
+  );
+}
+
+</script>
+    <script>
+/* js/cloud.js */
+/**
+ * Sincronização com o Supabase (login + uma linha por usuário em app_state), sem biblioteca externa.
+ * O app continua salvando primeiro no aparelho; a nuvem é cópia e sincroniza entre aparelhos.
+ * A chave "publishable" é pública por desenho: quem protege os dados é o login e a regra RLS de supabase/schema.sql.
+ */
+var SB_URL = 'https://gsdlnvuzbledklxvaqkw.supabase.co';
+var SB_KEY = 'sb_publishable_FWUlA2ZVFRnOadOBncZRVw_hbYGlIqR';
+var AUTH_KEY = 'disciplina2-auth',
+  MOD_KEY = 'disciplina2-mod';
+var CLOUD = { msg: '', busy: false, t: null };
+
+function cloudSession() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+function cloudSetSession(s) {
+  try {
+    if (s) localStorage.setItem(AUTH_KEY, JSON.stringify(s));
+    else localStorage.removeItem(AUTH_KEY);
+  } catch (e) {}
+}
+function cloudMod() {
+  try {
+    return +localStorage.getItem(MOD_KEY) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+function cloudStatus(msg) {
+  CLOUD.msg = msg;
+  var el = document.getElementById('cloudMsg');
+  if (el) el.textContent = msg;
+}
+function sbFetch(path, opt, token) {
+  opt = opt || {};
+  opt.headers = Object.assign(
+    { apikey: SB_KEY, 'Content-Type': 'application/json' },
+    token ? { Authorization: 'Bearer ' + token } : {},
+    opt.headers || {}
+  );
+  return fetch(SB_URL + path, opt);
+}
+function sbErr(j, fallback) {
+  var m = (j && (j.msg || j.error_description || j.message || j.error)) || fallback;
+  if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
+  if (/not confirmed/i.test(m))
+    return 'Confirme o e-mail pelo link que o Supabase enviou e tente de novo.';
+  if (/already registered/i.test(m)) return 'Este e-mail já tem conta. Use Entrar.';
+  if (/at least/i.test(m)) return 'A senha precisa de pelo menos 6 caracteres.';
+  return m;
+}
+function cloudAuth(kind, email, pass) {
+  var path = kind === 'up' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
+  cloudStatus('Conectando...');
+  return sbFetch(path, { method: 'POST', body: JSON.stringify({ email: email, password: pass }) })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        return { ok: r.ok, j: j };
+      });
+    })
+    .then(function (x) {
+      if (!x.ok) {
+        cloudStatus(sbErr(x.j, 'Não foi possível entrar.'));
+        return false;
+      }
+      if (!x.j.access_token) {
+        cloudStatus('Conta criada. Confirme o e-mail pelo link enviado e depois toque em Entrar.');
+        return false;
+      }
+      cloudSetSession({
+        access: x.j.access_token,
+        refresh: x.j.refresh_token,
+        uid: x.j.user.id,
+        email: x.j.user.email,
+        exp: Date.now() + (x.j.expires_in || 3600) * 1000 - 60000
+      });
+      return cloudSync(true).then(function () {
+        render(true);
+        return true;
+      });
+    })
+    .catch(function () {
+      cloudStatus('Sem internet. Tente de novo quando estiver conectado.');
+      return false;
+    });
+}
+function cloudOut() {
+  cloudSetSession(null);
+  cloudStatus('Você saiu. Seus dados continuam neste aparelho.');
+}
+/** Devolve um token válido, renovando quando expirou. */
+function cloudToken() {
+  var s = cloudSession();
+  if (!s) return Promise.resolve(null);
+  if (Date.now() < s.exp) return Promise.resolve(s.access);
+  return sbFetch('/auth/v1/token?grant_type=refresh_token', {
+    method: 'POST',
+    body: JSON.stringify({ refresh_token: s.refresh })
+  })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        return { ok: r.ok, j: j };
+      });
+    })
+    .then(function (x) {
+      if (!x.ok || !x.j.access_token) {
+        cloudSetSession(null);
+        cloudStatus('Sessão expirada. Entre de novo.');
+        return null;
+      }
+      s.access = x.j.access_token;
+      s.refresh = x.j.refresh_token || s.refresh;
+      s.exp = Date.now() + (x.j.expires_in || 3600) * 1000 - 60000;
+      cloudSetSession(s);
+      return s.access;
+    });
+}
+function cloudPayload() {
+  var d = JSON.parse(JSON.stringify(S));
+  delete d.sel;
+  return d;
+}
+function cloudPush(token, uid) {
+  var mod = cloudMod() || Date.now();
+  return sbFetch(
+    '/rest/v1/app_state?on_conflict=user_id',
+    {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({
+        user_id: uid,
+        data: cloudPayload(),
+        modificado: mod,
+        updated_at: new Date().toISOString()
+      })
+    },
+    token
+  ).then(function (r) {
+    if (!r.ok) throw new Error('push');
+    return mod;
+  });
+}
+/** Compara o aparelho com a nuvem e mantém o mais recente. */
+function cloudSync(quiet) {
+  var s = cloudSession();
+  if (!s || CLOUD.busy) return Promise.resolve();
+  if (!cloudMod() && Object.keys(S.sets || {}).length) {
+    try {
+      localStorage.setItem(MOD_KEY, String(Date.now()));
+    } catch (e) {}
+  }
+  CLOUD.busy = true;
+  if (!quiet) cloudStatus('Sincronizando...');
+  return cloudToken()
+    .then(function (token) {
+      if (!token) return null;
+      return sbFetch(
+        '/rest/v1/app_state?select=data,modificado&user_id=eq.' + s.uid,
+        {},
+        token
+      ).then(function (r) {
+        if (!r.ok) throw new Error('pull');
+        return r.json().then(function (rows) {
+          var remote = rows && rows[0],
+            local = cloudMod();
+          if (remote && remote.modificado > local) {
+            var keep = S.sel;
+            for (var k in S) if (remote.data[k] !== undefined) S[k] = remote.data[k];
+            S.sel = keep;
+            CLOUD.h = JSON.stringify(cloudPayload());
+            try {
+              localStorage.setItem(KEY, JSON.stringify(S));
+              localStorage.setItem(MOD_KEY, String(remote.modificado));
+            } catch (e) {}
+            cloudStatus('Dados baixados da nuvem.');
+            return 'pulled';
+          }
+          if (!remote || remote.modificado < local || !local) {
+            return cloudPush(token, s.uid).then(function (m) {
+              try {
+                localStorage.setItem(MOD_KEY, String(m));
+              } catch (e) {}
+              cloudStatus(
+                'Salvo na nuvem às ' +
+                  new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) +
+                  '.'
+              );
+              return 'pushed';
+            });
+          }
+          cloudStatus('Tudo sincronizado.');
+          return 'same';
+        });
+      });
+    })
+    .catch(function () {
+      cloudStatus('Sem conexão agora. Seus dados estão salvos no aparelho e sobem depois.');
+    })
+    .then(function (res) {
+      CLOUD.busy = false;
+      return res;
+    });
+}
+/** Chamado a cada save(): marca a hora da alteração e agenda o envio. */
+function cloudDirty() {
+  var h = JSON.stringify(cloudPayload());
+  if (h === CLOUD.h) return; // só navegação (semana/dia/aba): nada a gravar
+  CLOUD.h = h;
+  try {
+    localStorage.setItem(MOD_KEY, String(Date.now()));
+  } catch (e) {}
+  if (!cloudSession()) return;
+  clearTimeout(CLOUD.t);
+  CLOUD.t = setTimeout(function () {
+    cloudSync(true);
+  }, 4000);
+}
+/** Guarda o estado inicial para saber depois o que realmente mudou. */
+function cloudInit() {
+  CLOUD.h = JSON.stringify(cloudPayload());
+}
+/** Início do app: baixa se a nuvem estiver mais nova. */
+function cloudStart() {
+  if (!cloudSession()) return;
+  cloudSync(true).then(function (r) {
+    if (r === 'pulled') {
+      autoSel();
+      render(true);
+    }
+  });
+}
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible') cloudStart();
+  else if (cloudSession() && cloudMod()) cloudSync(true);
+});
+
+/** Cartão da aba Guia. */
+function cloudCard() {
+  var s = cloudSession();
+  return (
+    '<section class="card list"><div class="sec-t">Conta e nuvem</div>' +
+    (s
+      ? '<p class="sub">Conectado como <b>' +
+        esc(s.email) +
+        '</b>. Os registros sincronizam sozinhos e ficam disponíveis em qualquer aparelho.</p>' +
+        '<div class="row-actions"><button class="btn" type="button" data-act="cloudsync">Sincronizar agora</button><button class="btn sec" type="button" data-act="cloudout">Sair</button></div>'
+      : '<p class="sub">Entre para guardar seus registros na nuvem. Se perder o celular ou limpar o navegador, nada se perde.</p>' +
+        '<label class="lb">E-mail<input class="in" type="email" id="cEmail" autocomplete="email" inputmode="email"></label>' +
+        '<label class="lb">Senha (mínimo 6)<input class="in" type="password" id="cPass" autocomplete="current-password"></label>' +
+        '<div class="row-actions"><button class="btn" type="button" data-act="cloudin">Entrar</button><button class="btn sec" type="button" data-act="cloudup">Criar conta</button></div>') +
+    '<p class="sub" id="cloudMsg" role="status">' +
+    esc(CLOUD.msg) +
+    '</p></section>'
   );
 }
 
@@ -5151,7 +5472,13 @@ function compStart() {
   var c = new Date(S.comp + 'T00:00:00');
   if (isNaN(c)) return '';
   c.setDate(c.getDate() - ((c.getDay() + 6) % 7) - 7 * (COMP_WEEKS - 1));
-  return c.getFullYear() + '-' + String(c.getMonth() + 1).padStart(2, '0') + '-' + String(c.getDate()).padStart(2, '0');
+  return (
+    c.getFullYear() +
+    '-' +
+    String(c.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(c.getDate()).padStart(2, '0')
+  );
 }
 /** Dias até a competição (negativo se já passou), ou null. */
 function compDaysLeft() {
@@ -5160,6 +5487,12 @@ function compDaysLeft() {
     n = new Date();
   n.setHours(0, 0, 0, 0);
   return isNaN(c) ? null : Math.round((c - n) / 864e5);
+}
+/** Quantidade de sessões da semana (dias que não são de descanso). */
+function weekTotal(w) {
+  var n = 0;
+  for (var d = 0; d < 7; d++) if (kindOf(d, w) !== 'rest') n++;
+  return n || 1;
 }
 function weekList() {
   var a = [];
@@ -5217,15 +5550,15 @@ function kindLabel(d) {
     ? 'folga'
     : k === 'event'
       ? 'luta'
-    : k === 'lift'
-      ? isJJ() && d === JJ_FIN_DAY
-        ? 'potência'
-        : 'força'
-      : k === 'longao'
-        ? 'longo'
-        : k === 'mat'
-          ? 'tatame'
-          : 'corrida';
+      : k === 'lift'
+        ? (isComp() ? d === 6 : isJJ() && d === JJ_FIN_DAY)
+          ? 'potência'
+          : 'força'
+        : k === 'longao'
+          ? 'longo'
+          : k === 'mat'
+            ? 'tatame'
+            : 'corrida';
 }
 
 </script>
@@ -5514,7 +5847,7 @@ function intervalPhases(c, warm) {
 /* ===================== VIEWS ===================== */
 function weekCount(w) {
   var c = 0;
-  for (var d = 0; d < 6; d++) {
+  for (var d = 0; d < 7; d++) {
     if (getPath('days.' + dkey(w, d) + '.treino')) c++;
   }
   return c;
@@ -5767,7 +6100,6 @@ function viewTreino() {
     kind = kindOf(d),
     out = '';
   var done = weekCount(w);
-  out += programSwitch();
   out +=
     '<section class="card dayhead"><div><div class="k">' +
     DAYS[d] +
@@ -5787,8 +6119,10 @@ function viewTreino() {
     w +
     '</span><span class="num" id="wkTxt">' +
     done +
-    ' de 6 treinos</span></div><div class="bar"><i id="wkBar" style="width:' +
-    (done / 6) * 100 +
+    ' de ' +
+    weekTotal(w) +
+    ' treinos</span></div><div class="bar"><i id="wkBar" style="width:' +
+    Math.min(100, (done / weekTotal(w)) * 100) +
     '%"></i></div></div></section>';
   if (isComp()) out += compCountdown(w);
   if (!isComp() && w === 8 && kind !== 'rest')
@@ -5803,9 +6137,9 @@ function viewTreino() {
       out += exCard(it, i, w, d);
     });
     if (!isComp() && isJJ() && d === JJ_FIN_DAY) out += finisherCard(b, k);
-    if (isComp() && d === 2 && w < 12) out += condCard(b);
+    if (isComp() && d === 6 && w < 12) out += condCard(b);
   }
-  if (kind === 'mat') out += matCards(k);
+  if (kind === 'mat') out += matCards(k) + runCard(w, d, kind);
   if (kind === 'event') out += eventCard(k);
   if (kind === 'tiro') {
     var c = TIRO[b];
@@ -5889,6 +6223,7 @@ function viewTreino() {
       '</ul>' +
       '<button class="btn sec block" type="button" data-act="timer" data-t="mob">Iniciar cronômetro da mobilidade</button></section>';
   }
+  if ((kind === 'lift' && d !== 6) || kind === 'rest') out += runCard(w, d, kind);
   if (kind === 'rest')
     out +=
       '<section class="card list"><div class="sec-t">Recuperação</div><p>Sono, hidratação e alimentação em dia. Recuperar também é treinar.</p>' +
@@ -5918,27 +6253,35 @@ function viewTreino() {
   return out;
 }
 
-/** Seletor do programa ativo (Híbrido ou Jiu-Jitsu). */
-function programSwitch() {
+/** Corrida como alternativa: nos dias sem jiu (opcional) e quando faltar ao tatame. */
+function runCard(w, d, kind) {
+  if (w === 12 || !isComp()) return '';
+  var b = Math.min(blockOf(w), 3),
+    c = LONG[b],
+    lift = kind === 'lift',
+    mins = lift ? 20 : w >= 10 ? 20 : c.min,
+    title = kind === 'mat' ? 'Sem jiu hoje? Corrida alternativa' : 'Corrida opcional',
+    txt =
+      kind === 'mat'
+        ? 'Se não puder ir ao tatame, troque por corrida contínua. Não some com o treino de jiu: é um ou outro.'
+        : lift
+          ? 'Depois da musculação, só se estiver bem de energia. Rodagem leve para soltar a perna e ajudar a recuperar.'
+          : 'Dia sem tatame e sem força: corrida leve se o corpo pedir, ou descanso total.';
   return (
-    '<div class="seg" role="group" aria-label="Programa">' +
-    Object.keys(PROGRAMS)
-      .map(function (id) {
-        return (
-          '<button type="button" data-act="program" data-v="' +
-          id +
-          '" aria-pressed="' +
-          (S.program === id || (!S.program && id === 'hibrido')) +
-          '">' +
-          PROGRAMS[id].name +
-          '</button>'
-        );
-      })
-      .join('') +
-    '</div>'
+    '<section class="card list"><div class="sec-t">' +
+    title +
+    '</div><div class="big"><strong>' +
+    mins +
+    ' min</strong><span>ritmo ' +
+    (lift || w >= 10 ? 'Z2' : c.z) +
+    '</span></div><p class="sub">' +
+    txt +
+    ' Converse em frases curtas durante a corrida.</p>' +
+    '<button class="btn sec block" type="button" data-act="timer" data-t="run" data-m="' +
+    mins +
+    '">Iniciar cronômetro</button></section>'
   );
 }
-
 /** Competidor: data da luta e contagem regressiva. */
 function compCountdown(w) {
   var n = compDaysLeft(),
@@ -6862,7 +7205,7 @@ function viewGuia() {
     acc(
       'Programa Competidor (12 semanas)',
       '<p>Fases: <b>1–3 base</b> (3×8–10, aeróbio), <b>4–6 força e potência</b> (4–5 reps com cerca de 80%, explosivos a cerca de 70%), <b>7–9 específico</b> (menos volume, mais intensidade, rounds e simulações) e <b>10–12 polimento</b> (menos séries, mesma carga). A semana 12 termina na competição.</p>' +
-        '<p style="margin-top:8px">Tatame nas terças, quintas e sábados é uma suposição minha. Ajuste os dias em <code>js/data/competidor.js</code> se os seus forem outros.</p>' +
+        '<p style="margin-top:8px">Rotina: tatame segunda e quarta 7h30, quinta 18h30 e sábado 8h30. Força A na terça, Força B na sexta (pernas moderadas, pois o sábado tem jiu cedo) e potência curta no domingo. Para mudar os dias, edite <code>js/data/competidor.js</code>.</p>' +
         '<p style="margin-top:8px"><b>Metas de referência</b> para atletas avançados (revisão de Andreato et al., 2017): supino cerca de 1,3 a 1,5× o peso corporal, agachamento cerca de 1,2× e terra cerca de 1,7×. Use como direção, não como obrigação.</p>' +
         '<p style="margin-top:8px"><b>Corte de peso:</b> não improvise. Perder peso rápido derruba força e resistência. O ideal é chegar perto da categoria por dieta ao longo das semanas e conversar com um nutricionista esportivo antes de qualquer corte de água.</p>' +
         '<p style="margin-top:8px"><b>Semana da luta:</b> segunda só ativação curta, tatame leve na terça e quinta, véspera de descanso total. Nada de novidade em comida, equipamento ou aquecimento.</p>'
@@ -6873,6 +7216,7 @@ function viewGuia() {
         return acc(x[0], '<p>' + esc(x[1]) + '</p>');
       })
       .join('') +
+    cloudCard() +
     '<section class="card list"><div class="sec-t">Dados e plano</div>' +
     '<label class="lb">Início do programa (uma segunda-feira)<input class="in" type="date" id="startDate" value="' +
     esc(S.start || '') +
@@ -6917,8 +7261,8 @@ function refreshMeta() {
     c = weekCount(w),
     t = document.getElementById('wkTxt'),
     b = document.getElementById('wkBar');
-  if (t) t.textContent = c + ' de 6 treinos';
-  if (b) b.style.width = (c / 6) * 100 + '%';
+  if (t) t.textContent = c + ' de ' + weekTotal(w) + ' treinos';
+  if (b) b.style.width = Math.min(100, (c / weekTotal(w)) * 100) + '%';
   renderHeader();
 }
 document.addEventListener('input', function (e) {
@@ -7034,6 +7378,8 @@ document.addEventListener('click', function (e) {
       t = b.dataset.t;
     if (t === 'tiro') startTimer(intervalPhases(TIRO[bl], true));
     else if (t === 'circ') startTimer(intervalPhases(CIRC[bl], false));
+    else if (t === 'run')
+      startTimer([{ label: 'Corrida leve', sec: +b.dataset.m * 60, kind: 'work' }]);
     else if (t === 'cond') startTimer(compCondPhases(bl));
     else if (t === 'fin') {
       var fc = JJ_FIN[bl],
@@ -7055,6 +7401,21 @@ document.addEventListener('click', function (e) {
         });
       startTimer(ph);
     }
+  } else if (a === 'cloudin' || a === 'cloudup') {
+    var em = document.getElementById('cEmail').value.trim(),
+      pw = document.getElementById('cPass').value;
+    if (!em || !pw) cloudStatus('Preencha e-mail e senha.');
+    else cloudAuth(a === 'cloudup' ? 'up' : 'in', em, pw);
+  } else if (a === 'cloudout') {
+    cloudOut();
+    render(true);
+  } else if (a === 'cloudsync') {
+    cloudSync().then(function (r) {
+      if (r === 'pulled') {
+        autoSel();
+        render(true);
+      }
+    });
   } else if (a === 'resetswaps') {
     var dd = String(S.sel.day);
     Object.keys(S.swaps).forEach(function (k) {
@@ -7139,10 +7500,13 @@ function autoSel(force) {
   save();
 }
 load();
+cloudInit();
 if (!S.sel || typeof S.sel !== 'object') S.sel = { week: 1, day: 0, tab: 'treino' };
+S.program = 'comp';
 S.sel.tab = 'treino';
 autoSel();
 render();
+cloudStart();
 
 </script>
   </body>
